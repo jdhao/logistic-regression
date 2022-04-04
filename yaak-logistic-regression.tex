@@ -1,0 +1,123 @@
+\documentclass[a4paper, 12pt]{article}
+
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage[left=0.6in,right=0.6in]{geometry}
+\usepackage{esdiff}
+
+
+\begin{document}
+
+\section{Logistic regression and the loss formulation}
+
+Logistic regression (LR) has the following form:
+
+\begin{equation}\label{eq-logistic}
+f(x) = \frac{1}{\exp(-(W^T x + b)) + 1}
+\end{equation}
+
+Where $x$ is the feature for a sample (shape $1\times D$), W is the weight (shape $1\times D$),
+and $b$ is the bias term.
+
+The log loss for a single sample has the following form:
+
+\begin{equation}\label{eq-loss-single}
+    loss = -(y\log(1-p) + (1-y)\log(1-p))
+\end{equation}
+
+where $y$ is the ground truth label and $p$ is the prediction by LR.
+
+For a batch of $N$ samples, the loss is averaged over the batch:
+
+\begin{equation}\label{eq-loss-batch-no-regu}
+    loss = -\frac{1}{N}\sum_{i=1}^{N} y\log(p) + (1-y)\log(1-p)
+\end{equation}
+
+If we add L2 regularization for the weight vector, the final loss we are going to minimize is:
+
+\begin{equation}\label{eq-loss-with-regu}
+    L = -\frac{1}{N}\sum_{i=1}^{N} y\log(p) + (1-y)\log(1-p) + \alpha \frac{1}{2} {\lVert W \rVert}^2
+\end{equation}
+
+$\alpha$ is the term used to control the regularization effect.
+
+\section{Derivative of the loss}
+
+Now let's derive the first part of the loss w.r.t to the weight $W$ for a single sample.
+
+Let
+
+\begin{equation}
+    \begin{aligned}
+        p &= \frac{1}{e^{-z} + 1} \\
+        z &= W^T x + b
+    \end{aligned}
+\end{equation}
+
+
+Based on chain rule, the derivative of loss in \cref{eq-loss-single} w.r.t W can be written as:
+
+\begin{equation}\label{eq-deriv-single}
+    -\left (y \cdot \frac{1}{p}\cdot \frac{\partial p}{\partial z} \cdot \frac{\partial z}{\partial W} + (1-y)\cdot
+        \frac{-1}{1-p}\cdot \frac{\partial p} {\partial z} \cdot \frac{\partial z}{\partial W} \right)
+\end{equation}
+
+The partial derivative is:
+
+\begin{equation}\label{eq-partial-deriv}
+    \begin{aligned}
+        \diffp{p}{z} &= \frac{e^{-z}}{(e^{-z} + 1)^2} = p(1-p)\\
+        \diffp{z}{W} &= x
+    \end{aligned}
+\end{equation}
+
+Now we substitute \cref{eq-partial-deriv} into \cref{eq-deriv-single} and simply it a bit, we get the following:
+
+\begin{equation}\label{eq-partial-single-final}
+    (p - y)x
+\end{equation}
+
+Now we deal with the regularization part in the loss, the derivative w.r.t to $W$ is easy to get:
+
+\begin{equation}\label{eq-partial-regu}
+    \alpha W
+\end{equation}
+
+With \cref{eq-partial-single-final} and \cref{eq-partial-regu}, now it is easy to get the derivative of overall $L$
+w.r.t $W$:
+
+\begin{equation}\label{eq-deriv-L-to_w-non-matrix}
+    \diffp{L}{W} = \frac{1}{N} \sum_{i=1}^{N} (p^{(i)} - y^{(i)}) x^{(i)} + \alpha W
+\end{equation}
+
+Actually, we can write the above formulation as matrix form to make it more succinct:
+
+\begin{equation}\label{eq-deriv-L-to_w-matrix}
+    \diffp{L}{W} = \frac{1}{N} (\mathbf{P} - \mathbf{Y})^T \mathbf{X} + \alpha W
+\end{equation}
+
+In the above equation, both $\mathbf{P}$ and $\mathbf{Y}$ are of shape $N\times 1$,
+and $\mathbf{X}$ is of shape $N\times D$.
+
+Similarly, we can derive the derivative of $L$ w.r.t bia $b$:
+
+\begin{equation}\label{eq-deriv-L-to_b-matrix}
+    \diffp{L}{b} = \frac{1}{N} (\mathbf{P} - \mathbf{Y})^T \mathbf{I}
+\end{equation}
+
+where $I$ is of shape $N\times 1$ and has value of all 1.
+
+\section{Parameter update}
+
+The parameter update rule is:
+
+\begin{equation}\label{eq-param-update-rule}
+    \begin{aligned}
+        W^{t+1} &= W^{t} - \eta \diffp{L}{W} \\
+        b^{t+1} &= b^{t} - \eta \diffp{L}{b}
+    \end{aligned}
+\end{equation}
+
+In the above equation, $\eta$ is the learning rate.
+\end{document}

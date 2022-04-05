@@ -99,6 +99,12 @@ class SGDClassifier:
 
     def __compute_loss(self, x, y):
         prob = 1 / (np.exp(-1* (np.dot(self.w, x.T) + self.b)) + 1)
+
+        # to deal with nan for np.log()
+        epsilon = 1e-8
+        prob[np.isclose(prob, 0.0)] = epsilon
+        prob[np.isclose(prob, 1.0)] = 1-epsilon
+
         # print(f"prob: {prob}")
         loss = -np.mean(y * np.log(prob) + (1-y) * np.log(1-prob)) + 0.5 * self.alpha * norm(self.w)
 

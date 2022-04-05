@@ -93,13 +93,7 @@ class SGDClassifier:
         # probability output
         prob = 1 / (np.exp(-1* (np.dot(self.w, x.T) + self.b)) + 1)
 
-        y_pred = []
-        for p in prob:
-            if p <= 0.5:
-                y_pred.append(0)
-            else:
-                y_pred.append(1)
-
+        y_pred = np.where(prob <= 0.5, 0, 1)
         return y_pred
 
 

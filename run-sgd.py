@@ -71,7 +71,7 @@ class SGDClassifier:
                 self.__compute_gradient(x_batch, y_batch)
 
             val_loss = self.__compute_loss(xval, yval)
-            val_acc = compute_accuracy(self.predict(xval), yval)
+            val_acc = compute_accuracy(self.predict(xval)[0], yval)
 
             print(f"epoch: {i}, train loss: {train_loss/n_iter}, val loss: {val_loss}, " +
                   f"val acc: {val_acc}")
@@ -113,7 +113,7 @@ class SGDClassifier:
         prob = 1 / (np.exp(-1* (np.dot(self.w, x.T) + self.b)) + 1)
 
         y_pred = np.where(prob <= 0.5, 0, 1)
-        return y_pred
+        return y_pred, prob
 
 
     def __compute_loss(self, x, y):

@@ -31,8 +31,8 @@ class SGDClassifier:
         self.n_cls = n_cls
         self.use_bias = use_bias
 
-    def set_params(self, batch_size=32, lr=0.01, dropout=False, n_epochs=200, shuffle=True,
-                   weight_penalty=True, alpha=0.001):
+    def set_params(self, batch_size=32, lr=0.01, n_epochs=200, shuffle=True,
+                   weight_penalty=True, alpha=0.001, dropout=False, dropout_p=0.5):
 
         # number of epochs to train
         self.n_epochs = n_epochs
@@ -46,6 +46,9 @@ class SGDClassifier:
 
         # whether to use feature dropout
         self.dropout = dropout
+
+        # the probability for dropout
+        self.dropout_p = dropout_p
 
         # whether to add weight regularization
         self.weight_penalty = weight_penalty
@@ -86,8 +89,24 @@ class SGDClassifier:
         # get a batch of data
         for i in range(0, n_samples, self.batch_size):
             batch_idx = idx[i:i+self.batch_size]
-            yield x[batch_idx], y[batch_idx]
 
+            xbatch, ybatch = x[batch_idx], y[batch_idx]
+            if self.dropout:
+                xbatch = self.__dropout(xbatch)
+
+            yield xbatch, ybatch
+
+    def __dropout(self, x):
+        """
+        dropout for a batch of training samples
+        """
+        # note that dropout is for each sample in the batch.
+        p = np.random.random(x.shape)
+        self.dropout_mask = np.where(p <= self.dropout_p, 0, 1)
+
+        # element-wise multiplication
+        x_new = x * self.dropout_mask / (1 - self.dropout_p)
+        return x_new
 
     def predict(self, x):
         # probability output
@@ -137,7 +156,7 @@ def run_training():
 
     # setup classifier
     cls = SGDClassifier(dim=D)
-    cls.set_params(batch_size=16, lr=0.001)
+    cls.set_params(n_epochs=150, batch_size=16, lr=0.1, dropout=True)
 
     # fit data to model
     cls.fit(data, labels, data, labels)

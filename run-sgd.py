@@ -18,7 +18,7 @@ def clean_data(data, labels):
 
     # setup classifier
     cls = SGDClassifier(dim=D)
-    cls.set_params(n_epochs=150, batch_size=100, lr=0.2, dropout=False)
+    cls.set_params(n_epochs=100, batch_size=100, lr=0.2, dropout=False)
 
     # fit data to model
     cls.fit(data, labels, data, labels)
@@ -78,6 +78,10 @@ class SGDClassifier:
 
     def fit(self, xtrain, ytrain, xval, yval):
         # train the model for n_epochs
+        w_best = None
+        b_best = None
+        val_acc_best = 0
+
         for i in range(self.n_epochs):
             train_loss = 0
             n_iter = 0
@@ -93,8 +97,17 @@ class SGDClassifier:
             val_loss = self.__compute_loss(xval, yval)
             val_acc = compute_accuracy(self.predict(xval)[0], yval)
 
+            # best model checkpointing
+            if val_acc > val_acc_best:
+                val_acc_best = val_acc
+                w_best = self.w
+                b_best = self.b
+
             print(f"epoch: {i}, train loss: {train_loss/n_iter}, val loss: {val_loss}, " +
                   f"val acc: {val_acc}")
+
+        self.w = w_best
+        self.b = b_best
 
 
     def __get_batch(self, x, y):
@@ -211,16 +224,14 @@ def run_training():
 
     # setup classifier
     cls = SGDClassifier(dim=D)
-    cls.set_params(n_epochs=150, batch_size=16, lr=0.1, dropout=True)
+    cls.set_params(n_epochs=100, batch_size=32, lr=0.05, dropout=False)
 
     # fit data to model
-    cls.fit(data, labels, data, labels)
+    cls.fit(x_train, y_train, x_val, y_val)
 
-    preds = cls.predict(data)
-
-    acc = compute_accuracy(preds, labels)
-
-    print(f"Accuracy of model {acc*100:.2f}")
+    preds, _ = cls.predict(x_val)
+    acc = compute_accuracy(preds, y_val)
+    print(f"Validtion set num: {len(y_val)}, model accuracy: {acc*100:.2f}")
 
 
 if __name__ == '__main__':

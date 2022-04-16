@@ -4,6 +4,7 @@ import numpy as np
 from numpy.linalg import norm
 from sklearn.datasets import load_breast_cancer
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
 
 
 def compute_accuracy(preds, gt):
@@ -161,6 +162,33 @@ class SGDClassifier:
         self.b -= self.lr * delta_b
 
 
+def data_aug(x, y):
+    """
+    Augment the data
+    """
+    idx0 = np.where(y == 0)[0]
+    idx1 = np.where(y == 1)[0]
+    print(f"cls 0: {len(idx0)}, cls 1: {len(idx1)}")
+
+    diff = len(idx1) - len(idx0)
+    _idx = random.sample(list(idx0), k=diff)
+
+    x_sampled = x[_idx]
+    y_sampled = np.zeros(diff, dtype=np.int64)
+
+    x_new = np.concatenate([x, x_sampled], axis=0)
+    y_new = np.concatenate([y, y_sampled])
+
+    # shuffle the data to make it random ordered
+    n = x_new.shape[0]
+    idx = list(range(n))
+    random.shuffle(idx)
+    x_new = x_new[idx]
+    y_new = y_new[idx]
+
+    return x_new, y_new
+
+
 def run_training():
 
     # load dataset from scikit-learn
@@ -175,6 +203,11 @@ def run_training():
 
     # clean the data
     data, labels = clean_data(data, labels)
+    print(f"sample num: {data.shape[0]}")
+
+    x_train, x_val, y_train, y_val = train_test_split(data, labels, test_size=0.2, random_state=2022)
+
+    x_train, y_train = data_aug(x_train, y_train)
 
     # setup classifier
     cls = SGDClassifier(dim=D)

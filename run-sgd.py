@@ -13,10 +13,29 @@ def compute_accuracy(preds, gt):
 
 
 def clean_data(data, labels):
+    N, D = data.shape
 
-    # apply simple heuristics on data, labels to do cleanup/validation if needed
+    # setup classifier
+    cls = SGDClassifier(dim=D)
+    cls.set_params(n_epochs=150, batch_size=100, lr=0.2, dropout=False)
 
-    return data, labels
+    # fit data to model
+    cls.fit(data, labels, data, labels)
+
+    preds, p = cls.predict(data)
+    idx = np.where(preds != labels)[0]
+
+    p_wrong = p[idx]
+    print(f"idx: {idx}, prob: {p_wrong}")
+
+    # find the index where model prediction is wrong, but it has strong confidence.
+    _id = np.where((preds != labels) & ((p > 0.8) | (p < 0.2)))[0]
+
+    # Remove those elements
+    new_data = np.delete(data, _id, axis=0)
+    new_labels = np.delete(labels, _id)
+
+    return new_data, new_labels
 
 
 class SGDClassifier:
@@ -153,6 +172,9 @@ def run_training():
     # normalize the features
     scaler = StandardScaler()
     data = scaler.fit_transform(data)
+
+    # clean the data
+    data, labels = clean_data(data, labels)
 
     # setup classifier
     cls = SGDClassifier(dim=D)

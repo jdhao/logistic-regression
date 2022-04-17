@@ -1,3 +1,4 @@
+import logging
 import random
 
 import numpy as np
@@ -5,6 +6,19 @@ from numpy.linalg import norm
 from sklearn.datasets import load_breast_cancer
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    datefmt="%Y-%m-%d %H:%M:%S",
+    format="%(asctime)s %(message)s",
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 def compute_accuracy(preds, gt):
@@ -27,7 +41,7 @@ def clean_data(data, labels):
     idx = np.where(preds != labels)[0]
 
     p_wrong = p[idx]
-    print(f"idx: {idx}, prob: {p_wrong}")
+    logger.debug("idx: %s, prob: %s", idx, p_wrong)
 
     # find the index where model prediction is wrong, but it has strong confidence.
     _id = np.where((preds != labels) & ((p > 0.8) | (p < 0.2)))[0]
@@ -103,8 +117,8 @@ class SGDClassifier:
                 w_best = self.w
                 b_best = self.b
 
-            print(f"epoch: {i}, train loss: {train_loss/n_iter}, val loss: {val_loss}, " +
-                  f"val acc: {val_acc}")
+            logger.info("epoch: %s, train loss: %s, val loss: %s, val acc: %s",
+                        i, train_loss/n_iter, val_loss, val_acc)
 
         self.w = w_best
         self.b = b_best
@@ -157,7 +171,7 @@ class SGDClassifier:
         prob[np.isclose(prob, 0.0)] = epsilon
         prob[np.isclose(prob, 1.0)] = 1-epsilon
 
-        # print(f"prob: {prob}")
+        logger.debug("prob: %s", prob)
         loss = -np.mean(y * np.log(prob) + (1-y) * np.log(1-prob)) + 0.5 * self.alpha * norm(self.w)
 
         return loss
@@ -181,7 +195,7 @@ def data_aug(x, y):
     """
     idx0 = np.where(y == 0)[0]
     idx1 = np.where(y == 1)[0]
-    print(f"cls 0: {len(idx0)}, cls 1: {len(idx1)}")
+    logger.debug(f"cls 0: %s, cls 1: %s", len(idx0), len(idx1))
 
     diff = len(idx1) - len(idx0)
     _idx = random.sample(list(idx0), k=diff)
@@ -216,22 +230,25 @@ def run_training():
 
     # clean the data
     data, labels = clean_data(data, labels)
-    print(f"sample num: {data.shape[0]}")
+    logger.debug("sample num: %s", data.shape[0])
 
+    # split the data into train and val
     x_train, x_val, y_train, y_val = train_test_split(data, labels, test_size=0.2, random_state=2022)
 
+    # augment the data
     x_train, y_train = data_aug(x_train, y_train)
 
     # setup classifier
     cls = SGDClassifier(dim=D)
-    cls.set_params(n_epochs=100, batch_size=32, lr=0.05, dropout=False)
+    cls.set_params(n_epochs=100, batch_size=16, lr=0.01, dropout=True)
 
     # fit data to model
     cls.fit(x_train, y_train, x_val, y_val)
 
+    # do prediction
     preds, _ = cls.predict(x_val)
     acc = compute_accuracy(preds, y_val)
-    print(f"Validtion set num: {len(y_val)}, model accuracy: {acc*100:.2f}")
+    logger.info("Validtion set num: %s, model accuracy: %s", len(y_val), acc*100)
 
 
 if __name__ == '__main__':

@@ -240,7 +240,7 @@ def run_training():
 
     # setup classifier
     cls = SGDClassifier(dim=D)
-    cls.set_params(n_epochs=100, batch_size=16, lr=0.01, dropout=True)
+    cls.set_params(n_epochs=100, batch_size=32, lr=0.05, dropout=True)
 
     # fit data to model
     cls.fit(x_train, y_train, x_val, y_val)

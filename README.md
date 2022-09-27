@@ -2,6 +2,7 @@
 
 This is my implementation for Logistic regression for a classification task,
 dropout during training is also included.
+Dataset used in training and evaluation is [breast cancer dataset](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_breast_cancer.html).
 
 The model training is done using SGD (stochastic gradient descent).
 
